@@ -1,0 +1,23 @@
+# 验收记录
+
+日期：2026-10-15。下面是当天已经做过的结果。没有把密码和公网地址抄进来。
+
+| 用例 | 结果 |
+|------|------|
+| TC1 | Cloudflare 追踪是 `loc=US`，`colo=EWR`，TLS 1.3。Mac 经 Surge，以及本机 mihomo 1.19.30 经这份节点，都是这个结果 |
+| TC2 | 用微软的名字连 443，证书主体 `www.microsoft.com`，签发者是 Microsoft TLS G2。HTTP/2 `200`，正文约 201 KB |
+| TC3 | `http://` 加地址：TCP 后 8 秒 0 字节，然后超时 |
+| TC4 | `https://` 加地址本身：TLS 1.3，证书仍是 `www.microsoft.com`，接着是 HTTP/1.0 `400`，正文 312 字节。浏览器因此显示没有内容 |
+| TC5 | 2026-10-15 再次登录查看：`sing-box` 听 `*:443` 和 `127.0.0.1:8388`。sshd 听 22。firewalld 目标 `DROP`，服务 ssh，端口 `443/tcp`。`sing-box` 与 firewalld 为 active。nginx、Hysteria 为 inactive |
+| TC6 | 配置形状：ShadowTLS 版本 3，`strict_mode` 为真，握手服务器 `www.microsoft.com`，转到内层。内层 `127.0.0.1:8388`，TCP，`2022-blake3-aes-128-gcm`。进程用户是 `sing-box`，pid 1689 |
+| TC7 | `surge-cli --check` 通过并已 reload。百度、QQ、淘宝、微信、B 站、京东、知乎、微博、网易、抖音、美团、小米、华为、携程命中 ChinaMax 直连。`12306.cn`、`people.com.cn` 命中 `.cn`。谷歌、GitHub、YouTube、维基百科、Netflix、OpenAI、Telegram、X 的最终策略是 NY。`policy-group get Proxy` 的选择是 NY |
+| TC8 | `mp.weixin.qq.com`、`servicewechat.com`、`res.wx.qq.com`、`myqcloud.com`、`qcloud.com`、`wxapp.tc.qq.com` 都是 DIRECT。实连公众号首页：连接 3.6 毫秒，首字节 219 毫秒，总共 251 毫秒，`200`。同一时刻百度总共 77 毫秒。连接时间说明没有绕纽约 |
+| TC9 | 手机当时在线。Clash Meta `2.11.35` 配置 NY 处于运行。日志里 `qq.com`、百度按 GeoSite cn 直连，谷歌和 GitHub 走 Proxy NY。后来手机拔线。本机 `geosite.dat` 含 `weixin.qq.com`、`qq.com`、`servicewechat.com`、`qpic.cn`、`myqcloud.com`、`qcloud.la`，不含单独的 `mp.weixin.qq.com` 字符串，子域名跟着 `weixin.qq.com` |
+| TC10 | `ssh -o BatchMode=yes banwa` 退出 0。用户 root。主机名与面板一致。新终端的别名是 `banwa=ssh banwa` |
+| TC11 | 手机旧包 `com.github.kr328.clash.foss` 2.5.12 的 `libclash.so` 没有 `shadow-tls`，也没有 `2022-blake3`。Clash Meta 的库里有 `shadow-tls`。安装包 sha256 `af7f05d8801798a8e75de682e5f67070138becb8623b7a341c3e5cd042a3753d`，与 GitHub 上 `v2.11.35` 的 arm64 发布记录一致 |
+| TC12 | 2026-10-15 再跑 `render_clients.py`，退出 0。`NY.yaml`、`NY-android.yaml`、Surge 三行 CHECK 都是 0，Surge 已 reload。`policy-group get Proxy` 仍是 NY。谷歌命中 `FINAL,Proxy` 到 NY。`mp.weixin.qq.com` 和百度命中 ChinaMax 直连。Cloudflare 追踪仍是 `loc=US`、`colo=EWR`。`banwa` 退出 0，用户 root。两份 Clash 权限 `600`。Mac 这份补上 `GEOSITE,cn`。Surge 的 UDP 中继改为关闭，与服务器只收 TCP 一致。手机当时没连着，`NY-android.yaml` 只留在本机，没有导入。仓库子目录没有这台机器的地址。没有打开 Clash 的系统代理 |
+| TC13 | 2026-10-17 跑 `render_clients.py`，三行 CHECK 为 0，Surge 已 reload。`www.youtube.com` 与 `fonts.gstatic.com` 的 QUIC 命中 `PROTOCOL,QUIC,REJECT-NO-DROP`（0.2–0.6 毫秒）。两者的 HTTPS 命中域名规则，最终 NY。`i.ytimg.com` 同样是 NY。百度 QUIC 和 HTTPS 仍是 ChinaMax 直连，首页总共 63 毫秒。`fonts.gstatic.com` 连续两次 1.26 秒、1.02 秒，不再出现直连污染地址时的大约 5 秒。YouTube 首页 949744 字节，首字节 1.03 秒，总共 2.26 秒，大约每秒 420 KB。手机 Clash 文件已写在本机，没有导入 |
+
+没有跑全仓 `pytest`。这一轮不改站点业务代码，也不改 `remote-control/`。不升 `version.json`。
+
+残留：ShadowTLS 仍有公开的探测研究。一台促销机的地址以后仍可能被封。面板 root 口令如果还没在服务商面板里改掉，应只在面板里改，不要写进仓库。第一次连纽约仍大约一秒。`doubleclick.net` 仍在 ChinaMax 里，直连会超时。
