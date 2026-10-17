@@ -1,6 +1,10 @@
-# 纽约个人代理 · 全流程材料
+# 个人代理 · 全流程材料
 
-这是 2026-10-15 在本机和一台纽约 VPS 上做成的个人代理记录。2026-10-17 补上第一次打开国外页面时的 QUIC 立刻拒绝，以及 YouTube、`gstatic`、`googleapis` 在中国 IP 规则前面走代理。它可以单独公开：<https://github.com/zhaosj0315/personal-proxy>。公开副本里没有密码，也没有那台机器的公网地址。
+这是一套个人代理的通用过程。服务商名称不写进过程。2026-10-15 验收的那一台在纽约，出口是 EWR，所以策略名叫 `NY`。换一台 VPS 时，出口城市跟着那台机器走。
+
+机器要满足同一形状：SSH 只用密钥；公网只留 22 和 `443/tcp`；443 是 ShadowTLS v3 严格模式，握手名 `www.microsoft.com`；内层 Shadowsocks 2022 只听 `127.0.0.1` 的 TCP。系统不必是 AlmaLinux，只要能跑 sing-box，防火墙按这个形状收口。本机 SSH 配置里的主机别名 `banwa` 指向哪一台，脚本就读哪一台。
+
+2026-10-17 补上第一次打开国外页面时的 QUIC 立刻拒绝，以及 YouTube、`gstatic`、`googleapis` 在中国 IP 规则前面走代理。公开副本：<https://github.com/zhaosj0315/personal-proxy>。里面没有密码，也没有机器的公网地址。
 
 阅读顺序：`REQUIREMENTS.md` → `DESIGN.md` → `TEST_CASES.md` → `TESTING.md`。
 
@@ -30,7 +34,7 @@ python3 scripts/render_clients.py
 
 ## 一句话
 
-443 端口用 ShadowTLS v3 伪装成 `www.microsoft.com`。里面是只听本机的 Shadowsocks 2022。国内直连，其余走纽约。浏览器打开那台机器的地址不是网站。
+443 端口用 ShadowTLS v3 伪装成 `www.microsoft.com`。里面是只听本机的 Shadowsocks 2022。国内直连，其余走这台 VPS。浏览器打开那台机器的地址不是网站。
 
 ## 边界
 

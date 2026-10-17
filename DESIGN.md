@@ -2,9 +2,11 @@
 
 对照 `REQUIREMENTS.md`。密码和公网地址不写在这里。
 
+服务商不进入设计。下面「服务器」一节是 2026-10-15 那一台的验收事实：系统 AlmaLinux 9，位置纽约。另一台 VPS 只要形状相同，就沿用同一份生成脚本。形状是：SSH 密钥登录，公网只留 22 和 `443/tcp`，443 为 ShadowTLS v3 严格模式，内层 Shadowsocks 2022 只听本机 TCP。脚本只认 `ssh banwa` 里那个地址，不认是谁卖的这台机器。
+
 ## 服务器
 
-系统是 AlmaLinux 9，位置纽约，没有全球 IPv6。进程是 sing-box 1.14.3，用户 `sing-box`，不是 root。二进制有 `cap_net_bind_service`，用来听 443。
+验收实例的系统是 AlmaLinux 9，位置纽约，没有全球 IPv6。进程是 sing-box 1.14.3，用户 `sing-box`，不是 root。二进制有 `cap_net_bind_service`，用来听 443。
 
 公网只留两个口，firewalld 区域 `public`，目标 `DROP`，接口是上网网卡，服务 `ssh`，端口 `443/tcp`。nginx 和 Hysteria 保持停止。
 
