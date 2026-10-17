@@ -8,6 +8,8 @@
 
 验收实例的系统是 AlmaLinux 9，位置纽约，没有全球 IPv6。进程是 sing-box 1.14.3，用户 `sing-box`，不是 root。二进制有 `cap_net_bind_service`，用来听 443。
 
+这台机器已经启用官方 BBR，队列是 `fq`，写在 `/etc/sysctl.conf`，开机保持。2026-10-17 晚，`tcp_bbr` 挂着几百个连接。服务器在美国本地拉 Cloudflare 大约每秒 154MB。同一时刻从客户端走代理大约每秒 139KB。播放卡顿来自这段回程，不来自端口不够，也不用来再装一套 BBR 脚本。安装脚本不改拥塞控制。
+
 公网只留两个口，firewalld 区域 `public`，目标 `DROP`，接口是上网网卡，服务 `ssh`，端口 `443/tcp`。nginx 和 Hysteria 保持停止。
 
 入站两层：
