@@ -27,7 +27,9 @@
 
 ## 一键生成
 
-入口是本目录的 `scripts/render_clients.py`。在 21zhao-site 仓库里，命令是 `python3 personal-proxy/scripts/render_clients.py`。单独克隆这份目录时，命令是 `python3 scripts/render_clients.py`。
+日常入口是 `scripts/one_click.sh`。它先跑 `scripts/check_server.py`，再跑 `scripts/render_clients.py`。在 21zhao-site 仓库里，命令是 `bash personal-proxy/scripts/one_click.sh`。单独克隆这份目录时，命令是 `bash scripts/one_click.sh`。
+
+服务器缺件时用 `python3 scripts/install_server.py --apply`。单元文件是 `scripts/sing-box.service`，密钥登录片段是 `scripts/sshd-key-only.conf`，配置形状样例是 `scripts/config.example.json`。样例里的密码不是真密码。
 
 1. `ssh banwa` 读取 `/etc/sing-box/config.json`。握手名必须是 `www.microsoft.com`，端口 443，ShadowTLS 版本 3，严格模式打开，内层算法是 `2022-blake3-aes-128-gcm`，并且只听 `127.0.0.1` 的 TCP。对不上就退出，不改本机文件。
 2. Surge 只替换以 `NY = ss,` 开头的那一行，以及那一条 `/32` 直连。中国名单或 `FINAL,Proxy` 不在，就拒绝写入。UDP 中继写成关闭，因为服务器内层只收 TCP。节点上写 `block-quic=on`。`[General]` 写 `udp-policy-not-supported-behaviour = REJECT`。在 `GEOIP,CN` 前面固定放 `PROTOCOL,QUIC,REJECT-NO-DROP`，以及 `youtube.com`、`youtu.be`、`youtube-nocookie.com`、`googlevideo.com`、`ytimg.com`、`ggpht.com`、`gstatic.com`、`googleapis.com` 进 `Proxy`。QUIC 规则在这些域名规则前面，所以这些名字的 QUIC 会立刻收到拒绝，TCP 才进纽约。

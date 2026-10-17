@@ -16,6 +16,7 @@
 | TC10 | R7 | `ssh -o BatchMode=yes banwa` 执行 `hostname` 和 `id -un` | 成功，用户是 root，不提示密码 |
 | TC11 | R9 | 对照 Surge 手册和手机旧 Clash 的内核字符串 | 旧 Clash 没有 `shadow-tls`。Surge 不改成 Reality |
 | TC12 | R10 | 在本目录执行 `python3 scripts/render_clients.py` | 三行 CHECK 都是 0。`Proxy` 仍是 NY。谷歌最终是 NY。`mp.weixin.qq.com` 仍直连。`banwa` 仍免密。仓库子目录没有这台机器的地址 |
+| TC14 | R10 | 在本目录执行 `bash scripts/one_click.sh` | 先打印 `CHECK server 0`，再打印三行客户端 CHECK 为 0。不执行 `install_server.py --apply` |
 | TC13 | R2 R6 | `surge-cli rule explain www.youtube.com protocol=QUIC`，再对同一主机用 `protocol=HTTPS`；同样看 `i.ytimg.com`、`fonts.gstatic.com` 和 `www.baidu.com` | YouTube 的 QUIC 命中 `PROTOCOL,QUIC,REJECT-NO-DROP`。YouTube、`i.ytimg.com`、`fonts.gstatic.com` 的 HTTPS 命中域名规则，最终是 NY，不经过 `GEOIP,CN`。百度 QUIC 和 HTTPS 仍是直连 |
 
 失败时先看 `Proxy` 组是不是被改成了 DIRECT，以及 NY 配置里那条 VPS 地址直连还在不在 `FINAL` 前面。

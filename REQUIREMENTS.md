@@ -13,7 +13,7 @@
 | R7 | `banwa` 免密直连这台机器 | 只用密钥。这条 SSH 不能再被送进它自己的代理 |
 | R8 | 这个地址不是网站 | 80 关闭。浏览器打开 IP 不应当得到一个自建网页 |
 | R9 | 不承诺地址永远不被封 | 文档写明残留风险。不为了「多开一个口」去加端口 |
-| R10 | 一键重新生成 Surge 和 Clash 连接 | 在本目录执行 `python3 scripts/render_clients.py` 退出 0。在 21zhao-site 仓库里，同一条命令是 `python3 personal-proxy/scripts/render_clients.py`。仓库里没有密码和这台机器的地址。本机两份 Clash 权限是 `600` |
+| R10 | 一键重新生成 Surge 和 Clash 连接 | 在本目录执行 `bash scripts/one_click.sh` 退出 0。它先检查服务器形状，再跑 `scripts/render_clients.py`。仓库里没有密码和这台机器的地址。本机两份 Clash 权限是 `600` |
 
 明确不做：
 

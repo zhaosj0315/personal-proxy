@@ -8,19 +8,33 @@
 
 阅读顺序：`REQUIREMENTS.md` → `DESIGN.md` → `TEST_CASES.md` → `TESTING.md`。
 
-在 21zhao-site 仓库里重新生成本机连接：
+日常一键是检查服务器形状，再重写本机 Surge 和 Clash。它不打印密码，也不改已经对上的服务器。
+
+在 21zhao-site 仓库里：
 
 ```bash
-python3 personal-proxy/scripts/render_clients.py
+bash personal-proxy/scripts/one_click.sh
 ```
 
 单独克隆本目录时：
 
 ```bash
-python3 scripts/render_clients.py
+bash scripts/one_click.sh
 ```
 
-脚本经 `ssh banwa` 读取服务器现网配置。它替换 Surge 里 NY 那一行和那条地址直连，并写上 QUIC 立刻拒绝，以及 YouTube、`gstatic`、`googleapis` 这几条在中国 IP 规则前面走代理。然后写出两份 Clash 文件。密码和地址只落在本机应用目录，脚本拒绝写进本仓库。检查通过后，Surge 文件有变化才 reload。手机文件留在本机，等手机连上再导入。
+新的 VPS 要先能 `ssh banwa`，再执行一次 `python3 scripts/install_server.py --apply`。已经对上的机器会跳过。现有配置和不同的二进制都不会被换掉。
+
+| 脚本 | 作用 |
+|---|---|
+| `scripts/one_click.sh` | 一键：检查服务器，再重写本机客户端 |
+| `scripts/check_server.py` | 只读检查 sing-box、防火墙和密钥登录 |
+| `scripts/install_server.py` | 缺件时补服务器。`--apply` 才写入 |
+| `scripts/render_clients.py` | 从服务器现网配置写出 Surge 和 Clash |
+| `scripts/sing-box.service` | systemd 单元 |
+| `scripts/sshd-key-only.conf` | SSH 只收密钥 |
+| `scripts/config.example.json` | 配置形状。密码是占位符 |
+
+`render_clients.py` 经 `ssh banwa` 读取服务器现网配置。它替换 Surge 里 NY 那一行和那条地址直连，并写上 QUIC 立刻拒绝，以及 YouTube、`gstatic`、`googleapis` 这几条在中国 IP 规则前面走代理。然后写出两份 Clash 文件。密码和地址只落在本机应用目录，脚本拒绝写进本仓库。检查通过后，Surge 文件有变化才 reload。手机文件留在本机，等手机连上再导入。
 
 ## 不入库的东西
 

@@ -18,6 +18,8 @@
 | TC12 | 2026-10-15 再跑 `render_clients.py`，退出 0。`NY.yaml`、`NY-android.yaml`、Surge 三行 CHECK 都是 0，Surge 已 reload。`policy-group get Proxy` 仍是 NY。谷歌命中 `FINAL,Proxy` 到 NY。`mp.weixin.qq.com` 和百度命中 ChinaMax 直连。Cloudflare 追踪仍是 `loc=US`、`colo=EWR`。`banwa` 退出 0，用户 root。两份 Clash 权限 `600`。Mac 这份补上 `GEOSITE,cn`。Surge 的 UDP 中继改为关闭，与服务器只收 TCP 一致。手机当时没连着，`NY-android.yaml` 只留在本机，没有导入。仓库子目录没有这台机器的地址。没有打开 Clash 的系统代理 |
 | TC13 | 2026-10-17 跑 `render_clients.py`，三行 CHECK 为 0，Surge 已 reload。`www.youtube.com` 与 `fonts.gstatic.com` 的 QUIC 命中 `PROTOCOL,QUIC,REJECT-NO-DROP`（0.2–0.6 毫秒）。两者的 HTTPS 命中域名规则，最终 NY。`i.ytimg.com` 同样是 NY。百度 QUIC 和 HTTPS 仍是 ChinaMax 直连，首页总共 63 毫秒。`fonts.gstatic.com` 连续两次 1.26 秒、1.02 秒，不再出现直连污染地址时的大约 5 秒。YouTube 首页 949744 字节，首字节 1.03 秒，总共 2.26 秒，大约每秒 420 KB。手机 Clash 文件已写在本机，没有导入 |
 
+| TC14 | 2026-10-17 `bash scripts/one_click.sh` 退出 0。先是 `CHECK server 0`，然后 Clash 两份和 Surge 的 CHECK 都是 0。Surge 文件没有变化，所以没有 reload。没有执行 `install_server.py --apply` |
+
 没有跑全仓 `pytest`。这一轮不改站点业务代码，也不改 `remote-control/`。不升 `version.json`。
 
 残留：ShadowTLS 仍有公开的探测研究。一台促销机的地址以后仍可能被封。面板 root 口令如果还没在服务商面板里改掉，应只在面板里改，不要写进仓库。第一次连纽约仍大约一秒。`doubleclick.net` 仍在 ChinaMax 里，直连会超时。

@@ -1,0 +1,36 @@
+{
+  "log": {
+    "level": "warn",
+    "timestamp": true
+  },
+  "inbounds": [
+    {
+      "type": "shadowtls",
+      "tag": "st-in",
+      "listen": "::",
+      "listen_port": 443,
+      "version": 3,
+      "users": [
+        {
+          "name": "ny",
+          "password": "REPLACE_WITH_48_HEX_CHARS"
+        }
+      ],
+      "handshake": {
+        "server": "www.microsoft.com",
+        "server_port": 443
+      },
+      "strict_mode": true,
+      "detour": "ss-in"
+    },
+    {
+      "type": "shadowsocks",
+      "tag": "ss-in",
+      "listen": "127.0.0.1",
+      "listen_port": 8388,
+      "network": "tcp",
+      "method": "2022-blake3-aes-128-gcm",
+      "password": "REPLACE_WITH_16_BYTE_BASE64"
+    }
+  ]
+}
