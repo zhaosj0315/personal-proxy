@@ -29,12 +29,13 @@ bash scripts/one_click.sh
 | `scripts/one_click.sh` | 一键：检查服务器，再重写本机客户端 |
 | `scripts/check_server.py` | 只读检查 sing-box、防火墙和密钥登录 |
 | `scripts/install_server.py` | 缺件时补服务器。`--apply` 才写入 |
-| `scripts/render_clients.py` | 从服务器现网配置写出 Surge 和 Clash |
+| `scripts/render_clients.py` | 从服务器现网配置写出 Surge 和 Clash。广告名单是公开网址，每 24 小时由 Surge 和 Clash 自己下载 |
+| `scripts/com.21zhao.personal-proxy.adblock.plist` | Mac 每天触发一次 Surge 外部资源更新 |
 | `scripts/sing-box.service` | systemd 单元 |
 | `scripts/sshd-key-only.conf` | SSH 只收密钥 |
 | `scripts/config.example.json` | 配置形状。密码是占位符 |
 
-`render_clients.py` 经 `ssh banwa` 读取服务器现网配置。它替换 Surge 里 NY 那一行和那条地址直连，并写上 QUIC 立刻拒绝，以及 YouTube、`gstatic`、`googleapis` 这几条在中国 IP 规则前面走代理。然后写出两份 Clash 文件。密码和地址只落在本机应用目录，脚本拒绝写进本仓库。检查通过后，Surge 文件有变化才 reload。手机文件留在本机，等手机连上再导入。
+`render_clients.py` 经 `ssh banwa` 读取服务器现网配置。它替换 Surge 里 NY 那一行和那条地址直连，并写上 QUIC 立刻拒绝、YouTube 和 `gstatic`、`googleapis` 走代理，以及广告名单的公开网址。Surge 每 24 小时自己下载这份名单。Clash 用同一个网址，`interval: 86400`，经 `NY` 下载。密码和地址只落在本机应用目录，脚本拒绝写进本仓库。检查通过后，Surge 文件有变化才 reload。手机上已经导入会自己更新的那份；再跑一键只重写本机文件。
 
 ## 不入库的东西
 

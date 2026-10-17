@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.21zhao.personal-proxy.adblock</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Applications/Surge.app/Contents/Applications/surge-cli</string>
+    <string>external-resource</string>
+    <string>update</string>
+    <string>all</string>
+  </array>
+  <key>StartInterval</key>
+  <integer>86400</integer>
+  <key>RunAtLoad</key>
+  <true/>
+</dict>
+</plist>

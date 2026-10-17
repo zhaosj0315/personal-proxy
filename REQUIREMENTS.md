@@ -13,7 +13,8 @@
 | R7 | `banwa` 免密直连这台机器 | 只用密钥。这条 SSH 不能再被送进它自己的代理 |
 | R8 | 这个地址不是网站 | 80 关闭。浏览器打开 IP 不应当得到一个自建网页 |
 | R9 | 不承诺地址永远不被封 | 文档写明残留风险。不为了「多开一个口」去加端口 |
-| R10 | 一键重新生成 Surge 和 Clash 连接 | 在本目录执行 `bash scripts/one_click.sh` 退出 0。它先检查服务器形状，再跑 `scripts/render_clients.py`。仓库里没有密码和这台机器的地址。本机两份 Clash 权限是 `600` |
+| R10 | 一键重新生成 Surge 和 Clash 连接 | 在本目录执行 `bash scripts/one_click.sh` 退出 0。它先检查服务器形状，再跑 `scripts/render_clients.py`，并装上每天一次的广告名单更新任务。仓库里没有密码和这台机器的地址。本机两份 Clash 权限是 `600` |
+| R11 | 广告域名拒绝，并且自己更新 | Surge 订阅公开名单，`update-interval=86400`。Clash 用同一个网址，`interval: 86400`，经 `NY` 下载。白名单在拒绝前面。名单不进仓库 |
 
 明确不做：
 

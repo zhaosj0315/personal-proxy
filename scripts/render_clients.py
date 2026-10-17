@@ -25,6 +25,20 @@ MIHOMO = (
     / "Library/Application Support/com.aegisclient.cloud/bin/mihomo-darwin-arm64"
 )
 SURGE_CLI = Path("/Applications/Surge.app/Contents/Applications/surge-cli")
+ADBLOCK_URL = (
+    "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/"
+    "rule/Surge/Advertising/Advertising_All_No_Resolve.list"
+)
+ADBLOCK_PROVIDER = f"""rule-providers:
+  adblock:
+    type: http
+    behavior: classical
+    format: text
+    url: {ADBLOCK_URL}
+    path: ./ruleset/adblock.list
+    interval: 86400
+    proxy: NY
+"""
 
 REMOTE = r"""
 import json
@@ -169,6 +183,8 @@ RULES = """rules:
   - DOMAIN-SUFFIX,lanxin.cn,DIRECT
   - DOMAIN-SUFFIX,css.com.cn,DIRECT
   - DOMAIN-SUFFIX,cec.com.cn,DIRECT
+  - DOMAIN-SUFFIX,safebrowsing.googleapis.com,DIRECT
+  - RULE-SET,adblock,REJECT
   - DOMAIN-SUFFIX,cn,DIRECT
   - GEOSITE,cn,DIRECT
   - AND,((NETWORK,UDP),(DST-PORT,443)),REJECT
@@ -186,7 +202,21 @@ RULES = """rules:
 
 
 SURGE_GENERAL_REJECT = "udp-policy-not-supported-behaviour = REJECT"
+SURGE_WHITELIST = (
+    "DOMAIN-SUFFIX,21zhao.com,DIRECT",
+    "DOMAIN-SUFFIX,lanxin.cn,DIRECT",
+    "DOMAIN-SUFFIX,css.com.cn,DIRECT",
+    "DOMAIN-SUFFIX,cec.com.cn,DIRECT",
+    "DOMAIN-SUFFIX,safebrowsing.googleapis.com,DIRECT",
+)
+SURGE_ADBLOCK = (
+    "RULE-SET,"
+    + ADBLOCK_URL
+    + ",REJECT-TINYGIF,no-resolve,update-interval=86400"
+)
 SURGE_MANAGED_RULES = (
+    *SURGE_WHITELIST,
+    SURGE_ADBLOCK,
     "PROTOCOL,QUIC,REJECT-NO-DROP",
     "DOMAIN-SUFFIX,youtube.com,Proxy",
     "DOMAIN-SUFFIX,youtu.be,Proxy",
@@ -199,8 +229,17 @@ SURGE_MANAGED_RULES = (
 )
 
 
+def is_managed_rule(line: str) -> bool:
+    stripped = line.strip()
+    if stripped in SURGE_MANAGED_RULES:
+        return True
+    return stripped.startswith("RULE-SET,") and (
+        "AdBlock.list" in stripped or "Advertising_All_No_Resolve.list" in stripped
+    )
+
+
 def ensure_surge_rules(text: str) -> str:
-    """Keep QUIC from waiting out, and keep YouTube names ahead of GEOIP."""
+    """Reject ad hostnames before China rules, and keep YouTube names ahead of GEOIP."""
     if SURGE_GENERAL_REJECT not in text:
         if "ipv6 = false" not in text:
             raise SystemExit("surge profile has no ipv6 line to anchor the UDP fallback")
@@ -209,15 +248,20 @@ def ensure_surge_rules(text: str) -> str:
             "ipv6 = false\n" + SURGE_GENERAL_REJECT + "\n",
             1,
         )
-    kept = [line for line in text.splitlines() if line.strip() not in SURGE_MANAGED_RULES]
+    kept = [line for line in text.splitlines() if not is_managed_rule(line)]
     text = "\n".join(kept)
     if not text.endswith("\n"):
         text += "\n"
+    lan = "RULE-SET,LAN,DIRECT,no-resolve"
+    if text.count(lan) != 1:
+        raise SystemExit("refusing to place adblock without the LAN rule")
+    early = (*SURGE_WHITELIST, SURGE_ADBLOCK)
+    late = tuple(rule for rule in SURGE_MANAGED_RULES if rule not in early)
+    text = text.replace(lan + "\n", lan + "\n" + "\n".join(early) + "\n", 1)
     needle = "GEOIP,CN,DIRECT"
     if text.count(needle) != 1:
         raise SystemExit("refusing to place YouTube rules without exactly one GEOIP line")
-    block = "\n".join(SURGE_MANAGED_RULES) + "\n"
-    return text.replace(needle, block + needle, 1)
+    return text.replace(needle, "\n".join(late) + "\n" + needle, 1)
 
 
 def render_mac(data: dict) -> str:
@@ -245,6 +289,7 @@ dns:
     - 119.29.29.29
 tun:
   enable: false
+{ADBLOCK_PROVIDER}
 proxies:
 {clash_proxy(data, "  ")}
 proxy-groups:
@@ -301,6 +346,7 @@ sniffer:
       ports: [443, 8443]
     HTTP:
       ports: [80, 8080-8880]
+{ADBLOCK_PROVIDER}
 proxies:
 {clash_proxy(data, "  ")}
 proxy-groups:
@@ -323,6 +369,10 @@ def check_outputs(data: dict) -> None:
             "DOMAIN-SUFFIX,youtube.com,Proxy",
             "DOMAIN-SUFFIX,gstatic.com,Proxy",
             "DOMAIN-SUFFIX,googleapis.com,Proxy",
+            "RULE-SET,adblock,REJECT",
+            "interval: 86400",
+            ADBLOCK_URL,
+            "DOMAIN-SUFFIX,safebrowsing.googleapis.com,DIRECT",
         ):
             if needle not in text:
                 raise SystemExit(f"clash output missing {needle}")
@@ -347,6 +397,8 @@ def check_outputs(data: dict) -> None:
         "DOMAIN-SUFFIX,youtube.com,Proxy",
         "DOMAIN-SUFFIX,gstatic.com,Proxy",
         "DOMAIN-SUFFIX,googleapis.com,Proxy",
+        "Advertising_All_No_Resolve.list,REJECT-TINYGIF,no-resolve,update-interval=86400",
+        "DOMAIN-SUFFIX,safebrowsing.googleapis.com,DIRECT",
         "FINAL,Proxy",
     ):
         if needle not in surge_text:

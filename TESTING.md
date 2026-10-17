@@ -19,6 +19,9 @@
 | TC13 | 2026-10-17 跑 `render_clients.py`，三行 CHECK 为 0，Surge 已 reload。`www.youtube.com` 与 `fonts.gstatic.com` 的 QUIC 命中 `PROTOCOL,QUIC,REJECT-NO-DROP`（0.2–0.6 毫秒）。两者的 HTTPS 命中域名规则，最终 NY。`i.ytimg.com` 同样是 NY。百度 QUIC 和 HTTPS 仍是 ChinaMax 直连，首页总共 63 毫秒。`fonts.gstatic.com` 连续两次 1.26 秒、1.02 秒，不再出现直连污染地址时的大约 5 秒。YouTube 首页 949744 字节，首字节 1.03 秒，总共 2.26 秒，大约每秒 420 KB。手机 Clash 文件已写在本机，没有导入 |
 
 | TC14 | 2026-10-17 `bash scripts/one_click.sh` 退出 0。先是 `CHECK server 0`，然后 Clash 两份和 Surge 的 CHECK 都是 0。Surge 文件没有变化，所以没有 reload。没有执行 `install_server.py --apply` |
+| TC15 | 2026-10-17 广告名单 289521 条域名规则写入 Surge 配置目录的 `AdBlock.list`，不进仓库。Surge 已 reload。`googleads.g.doubleclick.net`、`googlesyndication.com`、`s2.youtube.com` 命中 `REJECT-TINYGIF`。对 `googleads.g.doubleclick.net` 的连接在 0.012 秒失败。`www.youtube.com` 仍是 NY，首页 `200`。百度仍直连，总共 0.061 秒。`safebrowsing.googleapis.com` 和 `mp.weixin.qq.com` 仍直连。手机 USB 已连接。Clash Meta `2.11.35` 里会自己更新广告名单的那份 `NY` 已选中，时间是刚才。临时地址已关掉。更早的一份 `NY` 仍在列表里，没有选中 |
+
+| TC16 | 2026-10-17 全流程再验。`py_compile` 通过，安装脚本的远端片段能编译。密钥和公网地址扫描没有命中。`bash scripts/one_click.sh` 退出 0：`CHECK server 0`，Clash 两份和 Surge 的 CHECK 都是 0，Surge 未改所以没有 reload，打印 `ADBLOCK_SCHEDULE 86400`。`Proxy` 仍是 NY。百度、`mp.weixin.qq.com`、`safebrowsing.googleapis.com` 直连。`www.youtube.com` 的 QUIC 是 `REJECT-NO-DROP`，HTTPS 是 NY。`fonts.gstatic.com` 是 NY。`github.com` 最终是 NY。`googleads.g.doubleclick.net` 命中公开名单 `REJECT-TINYGIF`，带 `update-interval=86400`。外部资源状态 ready，更新时间 `2026-10-17 12:29:24 +08:00`。每天任务 `com.21zhao.personal-proxy.adblock` 已加载，`runs = 1`。两份 Clash 权限 `600`。百度首页 `200`，0.056 秒。广告域名 0.007 秒断开。YouTube 首页 `200`，首字节 1.995 秒，总共 3.850 秒。没有执行 `install_server.py --apply`。没有跑全仓 pytest |
 
 没有跑全仓 `pytest`。这一轮不改站点业务代码，也不改 `remote-control/`。不升 `version.json`。
 
