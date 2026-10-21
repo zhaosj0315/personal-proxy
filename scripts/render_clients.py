@@ -40,6 +40,91 @@ ADBLOCK_PROVIDER = f"""rule-providers:
     proxy: NY
 """
 
+# Hosts the public list still sends direct, and that are ad endpoints rather than
+# the app's own API. Company suffixes stay untouched.
+APP_AD_DOMAINS = (
+    "uve.weibo.com",
+    "splash.pinduoduo.com",
+    "splash.goofish.com",
+    "ad.goofish.com",
+    "sugar.zhihu.com",
+    "splash.zhihu.com",
+    "splash.jd.com",
+    "ads.jd.com",
+    "splash.xiaohongshu.com",
+    "ads.xiaohongshu.com",
+    "api-ad-product.huxiu.com",
+    "jad-api.jin10.com",
+)
+
+# HTTPS paths on a shared API host. Domain reject would take the app down with the ad.
+# Surge answers these locally. Clash Meta only sees the hostname, so it cannot apply them.
+SPLASH_REWRITES = (
+    r"^https?://(g-)?acs\.m\.goofish\.com/gw/mtop\..*splash(\.async)?\.ads",
+    r"^https?://(g-)?acs\.m\.goofish\.com/gw/mtop\.idle\.ad\.expose",
+    r"^https?://(g-)?acs\.m\.goofish\.com/gw/mtop\.idle\.idleadv\.(app\.launch\.report|scene\.restore)",
+    r"^https?://acs\.m\.taobao\.com/gw/mtop\.taobao\.idle\.home\.welcome",
+    r"^https?://acs\.m\.taobao\.com/gw/mtop\.alibaba\.advertisementservice\.getadv",
+    r"^https?://app\.bilibili\.com/x/v2/splash/",
+    r"^https?://manga\.bilibili\.com/twirp/comic\.v[0-9]+\.Comic/(Flash|ListFlash)",
+    r"^https?://api\.m\.jd\.com/client\.action\?(?:.*&)?functionId=lite_advertising(?:&|$)",
+    r"^https?://ms\.jr\.jd\.com/gw/generic/aladdin/(?:new)?na/m/getLoadingPicture",
+    r"^https?://homefront\.qunar\.com/front/splash/ad",
+    r"^https?://appconf\.mail\.163\.com/mmad/get\.do",
+    r"^https?://api\.kkmh\.com/v[0-9]+/(?:ad|advertisement)/",
+    r"^https?://app\.58\.com/api/home/(?:advertising|appadv)/",
+)
+
+MITM_HOSTS = (
+    "acs.m.goofish.com",
+    "g-acs.m.goofish.com",
+    "acs.m.taobao.com",
+    "app.bilibili.com",
+    "manga.bilibili.com",
+    "api.m.jd.com",
+    "ms.jr.jd.com",
+    "homefront.qunar.com",
+    "appconf.mail.163.com",
+    "api.kkmh.com",
+    "app.58.com",
+)
+
+SPLASH_CASES = (
+    ("https://acs.m.goofish.com/gw/mtop.taobao.idlecommerce.splash.async.ads/1.0/", True),
+    ("https://g-acs.m.goofish.com/gw/mtop.foo.splash.ads/1.0/?data=1", True),
+    ("https://acs.m.goofish.com/gw/mtop.idle.ad.expose/1.0/", True),
+    ("https://g-acs.m.goofish.com/gw/mtop.idle.idleadv.app.launch.report/1.0/", True),
+    ("https://acs.m.goofish.com/gw/mtop.idle.idleadv.scene.restore/1.0/", True),
+    ("https://acs.m.goofish.com/gw/mtop.taobao.idlehome.home.nextfresh/1.0/", False),
+    ("https://acs.m.goofish.com/gw/mtop.taobao.idle.item.recommend/1.0/", False),
+    ("https://h5.m.goofish.com/wow/moyu", False),
+    ("https://acs.m.taobao.com/gw/mtop.taobao.idle.home.welcome/1.0/", True),
+    ("https://acs.m.taobao.com/gw/mtop.alibaba.advertisementservice.getadv/1.0/", True),
+    ("https://acs.m.taobao.com/gw/mtop.taobao.idle.item.recommend/1.0/", False),
+    ("https://app.bilibili.com/x/v2/splash/show?ts=1", True),
+    ("https://app.bilibili.com/x/v2/feed/index", False),
+    ("https://api.bilibili.com/x/v2/splash/show", False),
+    ("https://manga.bilibili.com/twirp/comic.v1.Comic/Flash", True),
+    ("https://manga.bilibili.com/twirp/comic.v1.Comic/GetComic", False),
+    ("https://api.m.jd.com/client.action?functionId=lite_advertising&client=android", True),
+    ("https://api.m.jd.com/client.action?functionId=start&client=android", False),
+    ("https://api.m.jd.com/client.action?functionId=welcomeHome", False),
+    ("https://ms.jr.jd.com/gw/generic/aladdin/na/m/getLoadingPicture", True),
+    ("https://ms.jr.jd.com/gw/generic/aladdin/newna/m/getLoadingPicture", True),
+    ("https://ms.jr.jd.com/gw/generic/aladdin/na/m/getHome", False),
+    ("https://homefront.qunar.com/front/splash/ad", True),
+    ("https://homefront.qunar.com/front/home", False),
+    ("https://appconf.mail.163.com/mmad/get.do", True),
+    ("https://appconf.mail.163.com/mmad/other", False),
+    ("https://api.kkmh.com/v1/ad/show", True),
+    ("https://api.kkmh.com/v2/advertisement/list", True),
+    ("https://api.kkmh.com/v1/home", False),
+    ("https://app.58.com/api/home/advertising/list", True),
+    ("https://app.58.com/api/home/appadv/list", True),
+    ("https://app.58.com/api/home/feed", False),
+    ("https://www.baidu.com/", False),
+)
+
 REMOTE = r"""
 import json
 c = json.load(open("/etc/sing-box/config.json"))
@@ -169,7 +254,7 @@ def clash_proxy(data: dict, indent: str) -> str:
     )
 
 
-RULES = """rules:
+RULES = f"""rules:
   - IP-CIDR,0.0.0.0/8,DIRECT,no-resolve
   - IP-CIDR,10.0.0.0/8,DIRECT,no-resolve
   - IP-CIDR,100.64.0.0/10,DIRECT,no-resolve
@@ -184,6 +269,7 @@ RULES = """rules:
   - DOMAIN-SUFFIX,css.com.cn,DIRECT
   - DOMAIN-SUFFIX,cec.com.cn,DIRECT
   - DOMAIN-SUFFIX,safebrowsing.googleapis.com,DIRECT
+{chr(10).join(f"  - DOMAIN-SUFFIX,{host},REJECT" for host in APP_AD_DOMAINS)}
   - RULE-SET,adblock,REJECT
   - DOMAIN-SUFFIX,cn,DIRECT
   - GEOSITE,cn,DIRECT
@@ -214,9 +300,19 @@ SURGE_ADBLOCK = (
     + ADBLOCK_URL
     + ",REJECT-TINYGIF,no-resolve,update-interval=86400"
 )
-SURGE_MANAGED_RULES = (
+SURGE_APP_AD_RULES = tuple(
+    f"DOMAIN-SUFFIX,{host},REJECT-TINYGIF,no-resolve" for host in APP_AD_DOMAINS
+)
+SURGE_APP_QUIC = tuple(
+    f"AND,((PROTOCOL,QUIC),(DOMAIN,{host})),REJECT-NO-DROP" for host in MITM_HOSTS
+)
+SURGE_EARLY_RULES = (
     *SURGE_WHITELIST,
+    *SURGE_APP_AD_RULES,
     SURGE_ADBLOCK,
+    *SURGE_APP_QUIC,
+)
+SURGE_LATE_RULES = (
     "PROTOCOL,QUIC,REJECT-NO-DROP",
     "DOMAIN-SUFFIX,youtube.com,Proxy",
     "DOMAIN-SUFFIX,youtu.be,Proxy",
@@ -227,6 +323,9 @@ SURGE_MANAGED_RULES = (
     "DOMAIN-SUFFIX,gstatic.com,Proxy",
     "DOMAIN-SUFFIX,googleapis.com,Proxy",
 )
+SURGE_MANAGED_RULES = SURGE_EARLY_RULES + SURGE_LATE_RULES
+MARKER_BEGIN = "# personal-proxy-app-ads"
+MARKER_END = "# end-personal-proxy-app-ads"
 
 
 def is_managed_rule(line: str) -> bool:
@@ -255,13 +354,48 @@ def ensure_surge_rules(text: str) -> str:
     lan = "RULE-SET,LAN,DIRECT,no-resolve"
     if text.count(lan) != 1:
         raise SystemExit("refusing to place adblock without the LAN rule")
-    early = (*SURGE_WHITELIST, SURGE_ADBLOCK)
-    late = tuple(rule for rule in SURGE_MANAGED_RULES if rule not in early)
-    text = text.replace(lan + "\n", lan + "\n" + "\n".join(early) + "\n", 1)
+    text = text.replace(lan + "\n", lan + "\n" + "\n".join(SURGE_EARLY_RULES) + "\n", 1)
     needle = "GEOIP,CN,DIRECT"
     if text.count(needle) != 1:
         raise SystemExit("refusing to place YouTube rules without exactly one GEOIP line")
-    return text.replace(needle, "\n".join(late) + "\n" + needle, 1)
+    text = text.replace(needle, "\n".join(SURGE_LATE_RULES) + "\n" + needle, 1)
+    return ensure_app_ad_sections(text)
+
+
+def remove_marked(text: str) -> str:
+    pattern = re.compile(
+        re.escape(MARKER_BEGIN) + r"\n.*?" + re.escape(MARKER_END) + r"\n?",
+        re.S,
+    )
+    return pattern.sub("", text)
+
+
+def insert_marked(text: str, section: str, body: str) -> str:
+    block = MARKER_BEGIN + "\n" + body.rstrip() + "\n" + MARKER_END + "\n"
+    header = f"[{section}]"
+    if header not in text:
+        if not text.endswith("\n"):
+            text += "\n"
+        return text + "\n" + header + "\n" + block
+    return text.replace(header + "\n", header + "\n" + block, 1)
+
+
+def ensure_app_ad_sections(text: str) -> str:
+    """Rewrite only splash paths. The shared API host itself stays reachable."""
+    text = remove_marked(text)
+    rewrites = "\n".join(f"{pattern} reject-200" for pattern in SPLASH_REWRITES)
+    text = insert_marked(text, "URL Rewrite", rewrites)
+    mitm = "hostname = " + ", ".join(MITM_HOSTS) + "\nh2 = true"
+    return insert_marked(text, "MITM", mitm)
+
+
+def check_splash_patterns() -> None:
+    compiled = [re.compile(pattern) for pattern in SPLASH_REWRITES]
+    for url, should_match in SPLASH_CASES:
+        matched = any(item.search(url) for item in compiled)
+        if matched != should_match:
+            raise SystemExit(f"splash pattern mismatch: {url} matched={matched}")
+    print(f"CHECK splash-patterns {len(SPLASH_CASES)}")
 
 
 def render_mac(data: dict) -> str:
@@ -370,6 +504,9 @@ def check_outputs(data: dict) -> None:
             "DOMAIN-SUFFIX,gstatic.com,Proxy",
             "DOMAIN-SUFFIX,googleapis.com,Proxy",
             "RULE-SET,adblock,REJECT",
+            "DOMAIN-SUFFIX,uve.weibo.com,REJECT",
+            "DOMAIN-SUFFIX,splash.goofish.com,REJECT",
+            "DOMAIN-SUFFIX,sugar.zhihu.com,REJECT",
             "interval: 86400",
             ADBLOCK_URL,
             "DOMAIN-SUFFIX,safebrowsing.googleapis.com,DIRECT",
@@ -398,11 +535,21 @@ def check_outputs(data: dict) -> None:
         "DOMAIN-SUFFIX,gstatic.com,Proxy",
         "DOMAIN-SUFFIX,googleapis.com,Proxy",
         "Advertising_All_No_Resolve.list,REJECT-TINYGIF,no-resolve,update-interval=86400",
+        "DOMAIN-SUFFIX,uve.weibo.com,REJECT-TINYGIF,no-resolve",
+        "DOMAIN-SUFFIX,splash.goofish.com,REJECT-TINYGIF,no-resolve",
+        "DOMAIN-SUFFIX,sugar.zhihu.com,REJECT-TINYGIF,no-resolve",
+        "AND,((PROTOCOL,QUIC),(DOMAIN,acs.m.goofish.com)),REJECT-NO-DROP",
+        "splash(\\.async)?\\.ads reject-200",
+        "functionId=lite_advertising",
+        "hostname = " + ", ".join(MITM_HOSTS),
+        "h2 = true",
         "DOMAIN-SUFFIX,safebrowsing.googleapis.com,DIRECT",
         "FINAL,Proxy",
     ):
         if needle not in surge_text:
             raise SystemExit(f"surge profile missing {needle}")
+    if "functionId=start" in surge_text:
+        raise SystemExit("surge profile rejects JD startup, not only the ad call")
     proc = subprocess.run([str(SURGE_CLI), "--check", str(SURGE_PATH)], capture_output=True, text=True)
     message = (proc.stdout or "") + (proc.stderr or "")
     for secret in secrets:
@@ -413,7 +560,30 @@ def check_outputs(data: dict) -> None:
         raise SystemExit(proc.returncode)
 
 
+def enable_surge_https_rewrite() -> None:
+    """Turn on URL rewrite. MITM stays off when the local CA has no trust entry."""
+    proc = subprocess.run(
+        [str(SURGE_CLI), "feature", "set", "rewrite", "on"],
+        capture_output=True,
+        text=True,
+    )
+    if proc.returncode != 0:
+        message = ((proc.stdout or "") + (proc.stderr or ""))[-400:]
+        raise SystemExit(f"failed to enable rewrite: {message}")
+    print("FEATURE rewrite on")
+    proc = subprocess.run(
+        [str(SURGE_CLI), "feature", "set", "mitm", "on"],
+        capture_output=True,
+        text=True,
+    )
+    if proc.returncode != 0:
+        print("MITM_BLOCKED")
+        return
+    print("FEATURE mitm on")
+
+
 def main() -> None:
+    check_splash_patterns()
     data = ssh_read()
     check_source(data)
     surge_changed = render_surge(data)
@@ -425,6 +595,7 @@ def main() -> None:
         print("SURGE_RELOADED")
     else:
         print("SURGE_UNCHANGED")
+    enable_surge_https_rewrite()
     print("WROTE surge", oct(SURGE_PATH.stat().st_mode & 0o777))
     print("WROTE", MAC_CLASH.name, oct(MAC_CLASH.stat().st_mode & 0o777), MAC_CLASH.stat().st_size)
     print("WROTE", ANDROID_CLASH.name, oct(ANDROID_CLASH.stat().st_mode & 0o777), ANDROID_CLASH.stat().st_size)

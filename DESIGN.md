@@ -53,25 +53,34 @@ Mac 的 NY 配置，从上到下：
 1. 这台 VPS 自己的地址 `/32` 直连，避免 SSH 被送进自己的代理。
 2. `RULE-SET,LAN` 直连，并加 `no-resolve`。
 3. `21zhao.com`、蓝信、中软、CEC，以及 `safebrowsing.googleapis.com` 直连。
-4. `RULE-SET` 指向 blackmatrix7 的 `Advertising_All_No_Resolve.list`，策略 `REJECT-TINYGIF`，`no-resolve`，`update-interval=86400`。Surge 自己每 24 小时重新下载，不靠手动跑脚本。Mac 另有一个每天触发的 `external-resource update`。手机 Clash 用同网址的 `rule-providers`，`interval: 86400`，经 `NY` 下载。这一条放在 `.cn` 和中国名单前面。
-5. 所有 `.cn` 直连。
-6. `ChinaMax_Domain.list`：110800 条后缀、269 个完整域名。来源 blackmatrix7，名单日期 2026-10-14。文件在 Surge 配置目录，不进本仓库。
-7. `PROTOCOL,QUIC,REJECT-NO-DROP`。没被中国名单接住的 QUIC 立刻拒绝，浏览器马上改走 TCP，不等 UDP 超时。
-8. `youtube.com`、`youtu.be`、`youtube-nocookie.com`、`googlevideo.com`、`ytimg.com`、`ggpht.com`、`gstatic.com`、`googleapis.com` 进 `Proxy`。这几条放在中国 IP 规则前面，污染 DNS 把它们解析成国内地址时也不会改走直连。`gstatic.com` 走直连时会间歇连到污染地址，单次能拖到大约 5 秒。
-9. 中国 IP 直连。
-10. 其余进策略组 `Proxy`。
+4. 广告专用主机名，策略 `REJECT-TINYGIF`，`no-resolve`，放在公开名单和中国名单前面。这些名字不在公开名单里，原先会因中国名单直连：`uve.weibo.com`、`splash.pinduoduo.com`、`splash.goofish.com`、`ad.goofish.com`、`sugar.zhihu.com`、`splash.zhihu.com`、`splash.jd.com`、`ads.jd.com`、`splash.xiaohongshu.com`、`ads.xiaohongshu.com`、`api-ad-product.huxiu.com`、`jad-api.jin10.com`。不拒绝 `goofish.com`、`taobao.com`、`jd.com`、`zhihu.com`、`bilibili.com` 本身。
+5. `RULE-SET` 指向 blackmatrix7 的 `Advertising_All_No_Resolve.list`，策略 `REJECT-TINYGIF`，`no-resolve`，`update-interval=86400`。Surge 自己每 24 小时重新下载，不靠手动跑脚本。Mac 另有一个每天触发的 `external-resource update`。手机 Clash 用同网址的 `rule-providers`，`interval: 86400`，经 `NY` 下载。这一条放在 `.cn` 和中国名单前面。
+6. 所有 `.cn` 直连。
+7. `ChinaMax_Domain.list`：110800 条后缀、269 个完整域名。来源 blackmatrix7，名单日期 2026-10-14。文件在 Surge 配置目录，不进本仓库。
+8. `PROTOCOL,QUIC,REJECT-NO-DROP`。没被中国名单接住的 QUIC 立刻拒绝，浏览器马上改走 TCP，不等 UDP 超时。开屏改写用到的那几个 API 主机，它们的 QUIC 在中国名单前面就拒绝，避免 HTTP/3 绕过路径改写。
+9. `youtube.com`、`youtu.be`、`youtube-nocookie.com`、`googlevideo.com`、`ytimg.com`、`ggpht.com`、`gstatic.com`、`googleapis.com` 进 `Proxy`。这几条放在中国 IP 规则前面，污染 DNS 把它们解析成国内地址时也不会改走直连。`gstatic.com` 走直连时会间歇连到污染地址，单次能拖到大约 5 秒。
+10. 中国 IP 直连。
+11. 其余进策略组 `Proxy`。
 
-手机和 Mac 的 Clash 用同一份规则：私网和上面第 3 步的白名单直连，然后同一份广告域名拒绝，然后 `.cn`、`GEOSITE,cn` 直连，UDP 443 拒绝，然后是上面第 8 步那些 YouTube 域名进 `Proxy`，再是中国 IP，剩下进 `Proxy`。`GEOSITE,cn` 在导入手机时约 112060 条。`weixin.qq.com`、`qq.com`、`servicewechat.com` 在这张表里，公众号域名跟着走直连。Surge 仍是 ChinaMax，两边原则相同，名单来源相同。手机上选中的是会自己更新的那份。再跑一键只重写本机文件。
+手机和 Mac 的 Clash 用同一份域名规则：私网和上面第 3 步的白名单直连，然后第 4 步那些广告主机名拒绝，然后同一份公开广告名单，然后 `.cn`、`GEOSITE,cn` 直连，UDP 443 拒绝，然后是上面第 9 步那些 YouTube 域名进 `Proxy`，再是中国 IP，剩下进 `Proxy`。`GEOSITE,cn` 在导入手机时约 112060 条。`weixin.qq.com`、`qq.com`、`servicewechat.com` 在这张表里，公众号域名跟着走直连。Surge 仍是 ChinaMax，两边原则相同，名单来源相同。手机上选中的是会自己更新的那份。再跑一键只重写本机文件。路径改写只写在 Surge 里，Clash 看不到 HTTPS 路径。
+
+## 开屏路径
+
+闲鱼开屏是 `https://acs.m.goofish.com/gw/mtop.taobao.idlecommerce.splash.async.ads/1.0/`。`acs.m.goofish.com` 同时是闲鱼自己的接口，公开广告名单不含它，中国名单把它判成直连。整域拒绝会把商品、登录一起拒绝。Surge 的 `[URL Rewrite]` 只对开屏、广告曝光、广告上报这几条路径回空的 HTTP 200。同一主机上的 `home.nextfresh`、商品推荐不改。
+
+同样只改路径、不改整域的还有：淘宝 `advertisementservice.getadv` 和闲鱼旧开屏 `idle.home.welcome`，B 站 `/x/v2/splash/`，B 站漫画 Flash，京东 `functionId=lite_advertising`，京东金融 `getLoadingPicture`，去哪儿 `/front/splash/ad`，网易邮箱 `/mmad/get.do`，快看广告路径，58 同城首页广告路径。不改京东 `functionId=start`。
+
+这些路径在 TLS 里面。Surge 要先打开 MITM，证书被系统信任，改写才会发生。2026-10-21 系统钥匙串里有 `Surge Generated CA 9E093C20`，信任项数量是 0，`feature set mitm on` 失败。改写规则已经写入配置，解密没打开，所以闲鱼这条开屏请求仍会到达源站。手机 Clash Meta 不能解密这条 HTTPS，域名层补丁导入后也拦不住 `acs.m.goofish.com` 上的开屏。
 
 `21zhao.com` 在 Mac 上还由 21zhao-site 仓库里的 21ZHAO DIRECT 模块直连。这个模块本轮没有改。
 
 ## 还在的慢
 
-2026-10-17 量过。不在中国名单里的 QUIC 会立刻拒绝。上面第 8 步那些名字的网页走这台 VPS，不再被污染地址判成直连。
+2026-10-17 量过。不在中国名单里的 QUIC 会立刻拒绝。上面第 9 步那些名字的网页走这台 VPS，不再被污染地址判成直连。
 
 任何一个国外站第一次新建连接，到纽约仍有大约一秒，这是 ShadowTLS 握手。
 
-广告域名走公开名单的 `REJECT-TINYGIF`，每 24 小时更新。`recaptcha.net` 不在这份广告名单里，仍可能直连。YouTube 正片域名 `googlevideo.com` 不在广告名单里，片内广告如果和正片走同一个域名，这份名单拦不住。
+广告域名走公开名单的 `REJECT-TINYGIF`，每 24 小时更新。上面第 4 步那些广告主机名另外拒绝。`recaptcha.net` 不在这份广告名单里，仍可能直连。YouTube 正片域名 `googlevideo.com` 不在广告名单里，片内广告如果和正片走同一个域名，这份名单拦不住。闲鱼开屏在 `acs.m.goofish.com` 的路径上，MITM 没打开时改写不生效。
 
 ## SSH
 
