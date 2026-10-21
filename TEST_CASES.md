@@ -20,5 +20,6 @@
 | TC13 | R2 R6 | `surge-cli rule explain www.youtube.com protocol=QUIC`，再对同一主机用 `protocol=HTTPS`；同样看 `i.ytimg.com`、`fonts.gstatic.com` 和 `www.baidu.com` | YouTube 的 QUIC 命中 `PROTOCOL,QUIC,REJECT-NO-DROP`。YouTube、`i.ytimg.com`、`fonts.gstatic.com` 的 HTTPS 命中域名规则，最终是 NY，不经过 `GEOIP,CN`。百度 QUIC 和 HTTPS 仍是直连 |
 | TC15 | R6 R11 | `surge-cli rule explain` 看 `googleads.g.doubleclick.net`、`www.youtube.com`、`www.baidu.com`、`safebrowsing.googleapis.com`。再看 `external-resource list` 和本机每天任务 | 广告域名命中公开名单的 `REJECT-TINYGIF`，并带 `update-interval=86400`。YouTube 仍是 NY。百度和安全浏览仍直连。外部资源状态是 ready。每天任务已加载 |
 | TC18 | R12 | `surge-cli rule explain` 看 `wbapp.uve.weibo.com`、`sugar.zhihu.com`、`splash.goofish.com`、`acs.m.goofish.com`、`www.goofish.com`、`www.zhihu.com`。再对闲鱼开屏和 `home.nextfresh` 发 HTTPS。本地用脚本里的 33 条样例对一下正则 | 广告主机名是 `REJECT-TINYGIF`，连接马上失败。`acs.m.goofish.com`、`www.goofish.com`、`www.zhihu.com` 仍直连。开屏样例命中，首页和商品接口不命中。MITM 没打开时，开屏请求仍到达源站 |
+| TC19 | R13 | `surge-cli dns lookup` 看 `www.youtube.com`、`redirector.googlevideo.com`、`www.gstatic.com`、`www.baidu.com`、`safebrowsing.googleapis.com`。再 `http probe` 看 YouTube 和百度 | 前三个是 Google 地址段，服务器不是 `223.5.5.5`。百度仍是系统 DNS，首页直连且成功。安全浏览仍直连，仍用系统 DNS。YouTube 的 HTTPS 规则仍是 NY |
 
 失败时先看 `Proxy` 组是不是被改成了 DIRECT，以及 NY 配置里那条 VPS 地址直连还在不在 `FINAL` 前面。

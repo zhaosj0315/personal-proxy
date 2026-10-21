@@ -62,6 +62,14 @@ Mac 的 NY 配置，从上到下：
 10. 中国 IP 直连。
 11. 其余进策略组 `Proxy`。
 
+## 真实地址
+
+2026-10-22 早上，系统 DNS `223.5.5.5` 把 `www.youtube.com` 答成 `157.240.7.20`，把 `redirector.googlevideo.com` 答成 `220.181.174.97`，把 `www.gstatic.com` 答成 `220.181.174.162`。前一个是另一家公司的地址。后两个落在中国，裸 IP 会命中 `GEOIP,CN,DIRECT`。纽约那台机器自己解析这些名字，得到的是 `142.251` 和 `172.253` 段。
+
+直连 `1.1.1.1` 超时。同一地址走 NY 可以打开。所以 Surge 写 `encrypted-dns-follow-outbound-mode = true`，只在 `[Host]` 里把上面这些后缀，加上 `google.com` 和 `googleusercontent.com`，指到 `https://1.1.1.1/dns-query`。不设全局 `encrypted-dns-server`。百度仍走系统 DNS。`safebrowsing.googleapis.com` 在 `[Host]` 里单独指回 `223.5.5.5`，规则仍是 DIRECT。
+
+Clash 的 `nameserver-policy` 用同一份后缀，查询写成 `https://1.1.1.1/dns-query#NY`。`safebrowsing.googleapis.com` 仍是 `223.5.5.5`。国内 `nameserver` 不改。
+
 手机和 Mac 的 Clash 用同一份域名规则：私网和上面第 3 步的白名单直连，然后第 4 步那些广告主机名拒绝，然后同一份公开广告名单，然后 `.cn`、`GEOSITE,cn` 直连，UDP 443 拒绝，然后是上面第 9 步那些 YouTube 域名进 `Proxy`，再是中国 IP，剩下进 `Proxy`。`GEOSITE,cn` 在导入手机时约 112060 条。`weixin.qq.com`、`qq.com`、`servicewechat.com` 在这张表里，公众号域名跟着走直连。Surge 仍是 ChinaMax，两边原则相同，名单来源相同。手机上选中的是会自己更新的那份。再跑一键只重写本机文件。路径改写只写在 Surge 里，Clash 看不到 HTTPS 路径。
 
 ## 开屏路径
@@ -76,9 +84,9 @@ Mac 的 NY 配置，从上到下：
 
 ## 还在的慢
 
-2026-10-17 量过。不在中国名单里的 QUIC 会立刻拒绝。上面第 9 步那些名字的网页走这台 VPS，不再被污染地址判成直连。
+2026-10-17 量过。不在中国名单里的 QUIC 会立刻拒绝。上面第 9 步那些名字的网页走这台 VPS，不再被污染地址判成直连。2026-10-22 补上真实地址：明文系统 DNS 仍会把这些名字答成别的公司，裸的中国地址还会被 `GEOIP,CN` 判成直连。加密 DNS 只覆盖这些后缀。
 
-任何一个国外站第一次新建连接，到纽约仍有大约一秒，这是 ShadowTLS 握手。
+任何一个国外站第一次新建连接，到纽约仍有大约一秒，这是 ShadowTLS 握手。回程变慢时，打开页面的首包仍会停在这一秒上下。加密 DNS 去掉错误地址，不去掉这段握手。
 
 广告域名走公开名单的 `REJECT-TINYGIF`，每 24 小时更新。上面第 4 步那些广告主机名另外拒绝。`recaptcha.net` 不在这份广告名单里，仍可能直连。YouTube 正片域名 `googlevideo.com` 不在广告名单里，片内广告如果和正片走同一个域名，这份名单拦不住。闲鱼开屏在 `acs.m.goofish.com` 的路径上，MITM 没打开时改写不生效。
 

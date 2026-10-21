@@ -326,6 +326,26 @@ SURGE_LATE_RULES = (
 SURGE_MANAGED_RULES = SURGE_EARLY_RULES + SURGE_LATE_RULES
 MARKER_BEGIN = "# personal-proxy-app-ads"
 MARKER_END = "# end-personal-proxy-app-ads"
+# Plain UDP to the system resolver returns another company's address for these
+# names. DoH to 1.1.1.1 over DIRECT times out, so the lookup follows the proxy.
+# safebrowsing stays on the system resolver because its rule is DIRECT.
+SURGE_DOH = "https://1.1.1.1/dns-query"
+DOH_VIA_NY = SURGE_DOH + "#NY"
+SURGE_DOH_FOLLOW = "encrypted-dns-follow-outbound-mode = true"
+HOST_BEGIN = "# personal-proxy-doh"
+HOST_END = "# end-personal-proxy-doh"
+DNS_PROXY_SUFFIXES = (
+    "youtube.com",
+    "youtu.be",
+    "youtube-nocookie.com",
+    "googlevideo.com",
+    "ytimg.com",
+    "ggpht.com",
+    "gstatic.com",
+    "googleapis.com",
+    "google.com",
+    "googleusercontent.com",
+)
 
 
 def is_managed_rule(line: str) -> bool:
@@ -359,7 +379,7 @@ def ensure_surge_rules(text: str) -> str:
     if text.count(needle) != 1:
         raise SystemExit("refusing to place YouTube rules without exactly one GEOIP line")
     text = text.replace(needle, "\n".join(SURGE_LATE_RULES) + "\n" + needle, 1)
-    return ensure_app_ad_sections(text)
+    return ensure_surge_dns(ensure_app_ad_sections(text))
 
 
 def remove_marked(text: str) -> str:
@@ -387,6 +407,50 @@ def ensure_app_ad_sections(text: str) -> str:
     text = insert_marked(text, "URL Rewrite", rewrites)
     mitm = "hostname = " + ", ".join(MITM_HOSTS) + "\nh2 = true"
     return insert_marked(text, "MITM", mitm)
+
+
+def remove_block(text: str, begin: str, end: str) -> str:
+    pattern = re.compile(re.escape(begin) + r"\n.*?" + re.escape(end) + r"\n?", re.S)
+    return pattern.sub("", text)
+
+
+def surge_host_lines() -> list[str]:
+    lines = [
+        "safebrowsing.googleapis.com = server:223.5.5.5",
+        "*.safebrowsing.googleapis.com = server:223.5.5.5",
+    ]
+    for suffix in DNS_PROXY_SUFFIXES:
+        lines.append(f"{suffix} = server:{SURGE_DOH}")
+        lines.append(f"*.{suffix} = server:{SURGE_DOH}")
+    return lines
+
+
+def ensure_surge_dns(text: str) -> str:
+    """Resolve poisoned video names with DoH through the proxy. Leave other names alone."""
+    if SURGE_DOH_FOLLOW not in text:
+        anchor = SURGE_GENERAL_REJECT + "\n"
+        if anchor not in text:
+            raise SystemExit("surge profile has no UDP fallback line to anchor encrypted DNS")
+        text = text.replace(anchor, anchor + SURGE_DOH_FOLLOW + "\n", 1)
+    text = remove_block(text, HOST_BEGIN, HOST_END)
+    body = HOST_BEGIN + "\n" + "\n".join(surge_host_lines()) + "\n" + HOST_END + "\n"
+    header = "[Host]\n"
+    if header not in text:
+        rewrite = "[URL Rewrite]\n"
+        if rewrite not in text:
+            raise SystemExit("surge profile has no URL Rewrite section to anchor Host")
+        return text.replace(rewrite, "[Host]\n" + body + "\n" + rewrite, 1)
+    return text.replace(header, header + body, 1)
+
+
+def clash_nameserver_policy(indent: str) -> str:
+    rows = [
+        f"{indent}  'safebrowsing.googleapis.com': '223.5.5.5'",
+        f"{indent}  '+.safebrowsing.googleapis.com': '223.5.5.5'",
+    ]
+    for suffix in DNS_PROXY_SUFFIXES:
+        rows.append(f"{indent}  '+.{suffix}': '{DOH_VIA_NY}'")
+    return f"{indent}nameserver-policy:\n" + "\n".join(rows) + "\n"
 
 
 def check_splash_patterns() -> None:
@@ -421,7 +485,7 @@ dns:
   nameserver:
     - 223.5.5.5
     - 119.29.29.29
-tun:
+{clash_nameserver_policy("  ")}tun:
   enable: false
 {ADBLOCK_PROVIDER}
 proxies:
@@ -470,7 +534,7 @@ dns:
     geoip-code: CN
     ipcidr:
       - 240.0.0.0/4
-sniffer:
+{clash_nameserver_policy("  ")}sniffer:
   enable: true
   force-dns-mapping: true
   parse-pure-ip: true
@@ -510,6 +574,10 @@ def check_outputs(data: dict) -> None:
             "interval: 86400",
             ADBLOCK_URL,
             "DOMAIN-SUFFIX,safebrowsing.googleapis.com,DIRECT",
+            "'safebrowsing.googleapis.com': '223.5.5.5'",
+            DOH_VIA_NY,
+            "'+.googlevideo.com':",
+            "'+.gstatic.com':",
         ):
             if needle not in text:
                 raise SystemExit(f"clash output missing {needle}")
@@ -545,6 +613,11 @@ def check_outputs(data: dict) -> None:
         "h2 = true",
         "DOMAIN-SUFFIX,safebrowsing.googleapis.com,DIRECT",
         "FINAL,Proxy",
+        SURGE_DOH_FOLLOW,
+        "safebrowsing.googleapis.com = server:223.5.5.5",
+        f"googlevideo.com = server:{SURGE_DOH}",
+        f"*.gstatic.com = server:{SURGE_DOH}",
+        f"*.googleapis.com = server:{SURGE_DOH}",
     ):
         if needle not in surge_text:
             raise SystemExit(f"surge profile missing {needle}")

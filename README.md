@@ -35,7 +35,7 @@ bash scripts/one_click.sh
 | `scripts/sshd-key-only.conf` | SSH 只收密钥 |
 | `scripts/config.example.json` | 配置形状。密码是占位符 |
 
-`render_clients.py` 经 `ssh banwa` 读取服务器现网配置。它替换 Surge 里 NY 那一行和那条地址直连，并写上 QUIC 立刻拒绝、YouTube 和 `gstatic`、`googleapis` 走代理，以及广告名单的公开网址。2026-10-21 补上公开名单漏掉的广告主机名，并在 Surge 里只改闲鱼等 App 的开屏路径。Clash 只写主机名拒绝。Surge 每 24 小时自己下载这份名单。Clash 用同一个网址，`interval: 86400`，经 `NY` 下载。密码和地址只落在本机应用目录，脚本拒绝写进本仓库。检查通过后，Surge 文件有变化才 reload。手机上已经导入会自己更新的那份；再跑一键只重写本机文件，手机要重新导入才用上新的主机名。
+`render_clients.py` 经 `ssh banwa` 读取服务器现网配置。它替换 Surge 里 NY 那一行和那条地址直连，并写上 QUIC 立刻拒绝、YouTube 和 `gstatic`、`googleapis` 走代理，以及广告名单的公开网址。2026-10-22 起，这些视频域名和 `google.com`、`googleusercontent.com` 的真实地址改走 `https://1.1.1.1/dns-query`，查询本身经代理。直连这个地址会超时。其余域名仍用系统 DNS。`safebrowsing.googleapis.com` 不改。2026-10-21 补上公开名单漏掉的广告主机名，并在 Surge 里只改闲鱼等 App 的开屏路径。Clash 只写主机名拒绝。Surge 每 24 小时自己下载这份名单。Clash 用同一个网址，`interval: 86400`，经 `NY` 下载。密码和地址只落在本机应用目录，脚本拒绝写进本仓库。检查通过后，Surge 文件有变化才 reload。手机上已经导入会自己更新的那份；再跑一键只重写本机文件，手机要重新导入才用上新的主机名。
 
 ## 不入库的东西
 
